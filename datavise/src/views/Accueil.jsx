@@ -6,23 +6,29 @@ import Draggable from 'react-draggable'
 import domtoimage from 'dom-to-image'
 
 import { ToolsBox } from './components/ToolsBox'
+import { ModifiedData } from './components/ModifiedData'
 
 const Accueil = () => {
+  const [id, setId] = useState('courbe-container')
 
-  const [id, setId] = useState('courbe');
-  const downloadPNG = async (containerId, filename) => {
-    // Définir l'ID de manière asynchrone
-    await setId(containerId);
+  const [triggerDownload, setTriggerDownload] = useState(false)
 
-    // Récupérer l'élément par l'ID après qu'il a été mis à jour
-    const container = document.getElementById(id);
+  const downloadPNG = async containerId => {
+    setId(containerId)
+    setTriggerDownload(true)
+  }
 
-    // Continuer avec le reste de la logique
-    domtoimage.toBlob(container).then(function (blob) {
-      saveAs(blob, `${filename}.png`);
-    });
-  };
-
+  useEffect(() => {
+    if (triggerDownload) {
+      const container = document.getElementById(id)
+      if (container) {
+        domtoimage.toBlob(container).then(function (blob) {
+          saveAs(blob, `graph.png`)
+        })
+      }
+      setTriggerDownload(false)
+    }
+  }, [id, triggerDownload])
   // Exemple de données pour le camembert
   const camembertData = [
     { name: 'Catégorie A', y: 45 },
@@ -229,6 +235,24 @@ const Accueil = () => {
     <div>
       <h1>Dashboard</h1>
       <ToolsBox onCheckboxChange={handleCheckboxChange} />
+      {showCamembert && (
+                      <button
+                      onClick={() => {
+                        downloadPNG('camembert-container', 'camembert')
+                      }}
+                    >
+                      Télécharger PNG Camembert
+                    </button>
+      )}
+      {showScatterPlot && (
+      <button
+                onClick={() => {
+                  downloadPNG('scatter-container', 'scatter')
+                }}
+              >
+                Télécharger PNG Scatter Plot
+              </button> 
+              )}
       <div style={{ display: 'flex' }}>
         {showCourbe && (
           <Draggable
@@ -241,12 +265,19 @@ const Accueil = () => {
             onStart={() => console.log('Draggable started')}
             onStop={() => console.log('Draggable stopped')}
           >
-            <div id='courbe' style={{ flex: 1, marginRight: '10px', maxWidth: '550px' }}>
+            <div
+              id='courbe-container'
+              style={{ flex: 1, marginRight: '10px', maxWidth: '550px' }}
+            >
               <HighchartsReact
                 highcharts={Highcharts}
                 options={courbeOptions}
               />
-              <button onClick={() => {setId('courbe');downloadPNG('courbe-container', 'courbe'); }}>
+              <button
+                onClick={() => {
+                  downloadPNG('courbe-container', 'courbe')
+                }}
+              >
                 Télécharger PNG Courbe 1
               </button>
             </div>
@@ -254,37 +285,47 @@ const Accueil = () => {
         )}
 
         {showCamembert && (
-          <Draggable>
-            <div id='camembert' style={{ flex: 1, marginRight: '10px', maxWidth: '550px' }}>
+          <Draggable
+            bounds={{
+              left: -windowSize.width + 100,
+              top: -100,
+              right: windowSize.width - 100,
+              bottom: windowSize.height - 350
+            }}
+          >
+            <div
+              id='camembert-container'
+              style={{ flex: 1, marginRight: '10px', maxWidth: '550px' }}
+            >
               <HighchartsReact
                 highcharts={Highcharts}
                 options={camembertOptions}
               />
-              <button
-                onClick={() => {setId('camembert'); downloadPNG('camembert-container', 'camembert')}}
-              >
-                Télécharger PNG Camembert
-              </button>
+
             </div>
           </Draggable>
         )}
 
         {showScatterPlot && (
-          <Draggable>
-            <div id='scatter' style={{ flex: 1, maxWidth: '550px' }}>
+          <Draggable
+            bounds={{
+              left: -windowSize.width + 100,
+              top: -100,
+              right: windowSize.width - 100,
+              bottom: windowSize.height - 350
+            }}
+          >
+            <div id='scatter-container' style={{ flex: 1, maxWidth: '550px' }}>
               <HighchartsReact
                 highcharts={Highcharts}
                 options={scatterOptions}
               />
-              <button
-                onClick={() => {setId('scatter'); downloadPNG('scatter-container', 'scatter')}}
-              >
-                Télécharger PNG Scatter Plot
-              </button>
+           
             </div>
           </Draggable>
         )}
       </div>
+      <ModifiedData />
     </div>
   )
 }
