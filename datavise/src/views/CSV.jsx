@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
-import { Button, Table, Input } from 'semantic-ui-react';
+import { Button, Table, Input, Dropdown } from 'semantic-ui-react';
 import { UilArrowLeft, UilArrowRight, UilTrashAlt, UilExport } from '@iconscout/react-unicons';
 import ModalChoice from './components/ModalChoice';
 // import { useNavigate } from 'react-router-dom';
@@ -25,12 +25,23 @@ function CSV() {
     }
   }, [data]);
 
-  const toggleColumnVisibility = (columnName) => {
-    setColumnVisibility(prev => ({
-      ...prev,
-      [columnName]: !prev[columnName]
-    }));
+  const handleColumnVisibilityChange = (e, { value }) => {
+    const newVisibility = Object.keys(columnVisibility).reduce((acc, key) => {
+      acc[key] = value.includes(key);
+      return acc;
+    }, {});
+    setColumnVisibility(newVisibility);
   };
+  
+
+  const columnOptions = data.length > 0
+  ? Object.keys(data[0]).map(columnName => ({
+      key: columnName,
+      text: columnName,
+      value: columnName,
+    }))
+  : [];
+
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -159,21 +170,22 @@ function CSV() {
             />
           </div>
   
-        {/* Cases à cocher pour les colonnes */}
-        {data.length > 0 && (
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-          {Object.keys(data[0]).map(columnName => (
-            <label key={columnName}>
-              <input
-                type="checkbox"
-                checked={columnVisibility[columnName]}
-                onChange={() => toggleColumnVisibility(columnName)}
-              />
-              {columnName}
-            </label>
-          ))}
-        </div>
-      )}
+          {/* Conteneur pour centrer le Dropdown */}
+          {data.length > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+              <div style={{ width: '80%' }}> {/* Conteneur avec largeur spécifiée */}
+                <Dropdown
+                  placeholder='Sélectionnez les colonnes'
+                  fluid
+                  multiple
+                  selection
+                  options={columnOptions}
+                  onChange={handleColumnVisibilityChange}
+                  value={Object.keys(columnVisibility).filter(key => columnVisibility[key])}
+                />
+              </div>
+            </div>
+          )}
 
         {/* Tableau */}
         <div style={{ 
