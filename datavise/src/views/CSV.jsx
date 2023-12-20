@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { Button, Table, Input } from 'semantic-ui-react';
 import { UilArrowLeft, UilArrowRight, UilTrashAlt, UilExport } from '@iconscout/react-unicons';
-
+import ModalChoice from './components/ModalChoice';
 
 function CSV() {
   const [data, setData] = useState([]);
@@ -11,6 +11,7 @@ function CSV() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(10);
   const [csvLoaded, setCsvLoaded] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -38,6 +39,7 @@ function CSV() {
       Papa.parse(file, {
         complete: (result) => {
           setData(result.data);
+          setIsModalOpen(true);
           setFilteredData(result.data);
           setCsvLoaded(true);
           e.target.value = '';
@@ -141,8 +143,8 @@ function CSV() {
               borderCollapse: 'collapse',
               minWidth: '600px',
             }}>
-              <Table.Header style={{ 
-                  backgroundColor : "#75ABFA",
+              <Table.Header class="ui inverted dark blue table"  style={{ 
+                  
                   color: 'black'
                 }}>
                 <Table.Row>
@@ -300,6 +302,8 @@ function CSV() {
         )}
       </>
       )}
+    {/* Modal */}
+      <ModalChoice open={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }

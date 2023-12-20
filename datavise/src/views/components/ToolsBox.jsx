@@ -1,8 +1,7 @@
-// ToolsBox.js
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCog } from '@fortawesome/free-solid-svg-icons';
-import PropTypes from 'prop-types';
+import PropTypes from 'prop-types'
 
 export const ToolsBox = ({ onCheckboxChange }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -11,11 +10,11 @@ export const ToolsBox = ({ onCheckboxChange }) => {
     scatterPlot: false,
     line: true,
   });
-  
-  ToolsBox.propTypes = {
+
+  ToolsBox.propTypes = { 
     onCheckboxChange: PropTypes.func.isRequired,
   };
-  
+
   const handleClick = () => {
     setIsVisible(!isVisible);
   };
