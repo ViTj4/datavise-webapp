@@ -3,8 +3,6 @@ import axios from 'axios'
 export const Erreur = () => {
   const handleClick = () => {
 
-
-
   axios.get('http://localhost:3000/')
   .then(response => {
     // Traitement des données de réponse
