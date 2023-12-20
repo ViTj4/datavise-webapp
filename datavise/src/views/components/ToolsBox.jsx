@@ -1,30 +1,85 @@
-import { useState } from 'react'
+// ToolsBox.js
+import React, { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCog } from '@fortawesome/free-solid-svg-icons';
 
-export const ToolsBox = () => {
-  const [isVisible, setIsVisible] = useState(false)
+export const ToolsBox = ({ onCheckboxChange }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [checkedItems, setCheckedItems] = useState({
+    camembert: false,
+    scatterPlot: false,
+    line: true,
+  });
 
   const handleClick = () => {
-    setIsVisible(!isVisible)
-  }
+    setIsVisible(!isVisible);
+  };
+
+  const handleCheckboxChangeLocal = (itemName) => {
+    const newValue = !checkedItems[itemName];
+    setCheckedItems({
+      ...checkedItems,
+      [itemName]: newValue,
+    });
+
+    // Informer le parent du changement
+    onCheckboxChange(itemName, newValue);
+  };
+
   return (
-    <view>
-      <button onClick={() => handleClick()}>click</button>
-      {isVisible ? (
-        <div
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            maxWidth: '100px',
-            backgroundColor:'white',
-          }}
-        >
-          <label>camembert</label>
-          <label>scatter ploit</label>
-          <label>line</label>
-        </div>
-      ) : (
-        <></>
-      )}
-    </view>
-  )
-}
+    <div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          cursor: 'pointer',
+        }}
+        onClick={handleClick}
+      >
+        <FontAwesomeIcon icon={faCog} style={{ marginRight: '5px' }} />
+        Settings
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          maxWidth: isVisible ? '200px' : '0',
+          overflow: 'hidden',
+          transition: 'max-width 0.3s ease-in-out', // Ajout de l'effet de transition
+          backgroundColor: 'white',
+        }}
+      >
+        {isVisible && (
+          <>
+            <label>
+              {' '}
+              <input
+                type='checkbox'
+                checked={checkedItems.line}
+                onChange={() => handleCheckboxChangeLocal('line')}
+              />
+              Line
+            </label>
+            <label>
+              <input
+                type='checkbox'
+                checked={checkedItems.camembert}
+                onChange={() => handleCheckboxChangeLocal('camembert')}
+              />
+              Camembert
+            </label>
+            <label>
+              {' '}
+              <input
+                type='checkbox'
+                checked={checkedItems.scatterPlot}
+                onChange={() => handleCheckboxChangeLocal('scatterPlot')}
+              />
+              Scatter Plot
+            </label>
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
