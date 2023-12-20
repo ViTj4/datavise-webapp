@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Papa from 'papaparse';
 import { Button, Table, Input } from 'semantic-ui-react';
 import { UilArrowLeft, UilArrowRight, UilTrashAlt, UilExport } from '@iconscout/react-unicons';
 import ModalChoice from './components/ModalChoice';
+// import { useNavigate } from 'react-router-dom';
 
 function CSV() {
   const [data, setData] = useState([]);
@@ -12,6 +13,24 @@ function CSV() {
   const [rowsPerPage] = useState(10);
   const [csvLoaded, setCsvLoaded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [columnVisibility, setColumnVisibility] = useState({});
+
+  useEffect(() => {
+    if (data.length > 0) {
+      const visibility = Object.keys(data[0]).reduce((acc, key) => {
+        acc[key] = true;
+        return acc;
+      }, {});
+      setColumnVisibility(visibility);
+    }
+  }, [data]);
+
+  const toggleColumnVisibility = (columnName) => {
+    setColumnVisibility(prev => ({
+      ...prev,
+      [columnName]: !prev[columnName]
+    }));
+  };
 
   const handleSearchChange = (e) => {
     const value = e.target.value;
@@ -41,7 +60,7 @@ function CSV() {
           setData(result.data);
           setIsModalOpen(true);
           setFilteredData(result.data);
-          setCsvLoaded(true);
+          
           e.target.value = '';
           setSearchTerm(e.target.value);
         },
@@ -76,7 +95,17 @@ function CSV() {
   };
 
   const handleExport = () => {
-    const csv = Papa.unparse(data);
+    const filteredDataForExport = data.map(row => {
+      const filteredRow = {};
+      Object.entries(row).forEach(([key, value]) => {
+        if (columnVisibility[key]) {
+          filteredRow[key] = value;
+        }
+      });
+      return filteredRow;
+    });
+  
+    const csv = Papa.unparse(filteredDataForExport);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -86,6 +115,12 @@ function CSV() {
     link.click();
     link.parentNode.removeChild(link);
   };
+  
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setCsvLoaded(true);
+  }
 
   const indexOfLastRow = currentPage * rowsPerPage;
   const indexOfFirstRow = indexOfLastRow - rowsPerPage;
@@ -124,6 +159,22 @@ function CSV() {
             />
           </div>
   
+        {/* Cases à cocher pour les colonnes */}
+        {data.length > 0 && (
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+          {Object.keys(data[0]).map(columnName => (
+            <label key={columnName}>
+              <input
+                type="checkbox"
+                checked={columnVisibility[columnName]}
+                onChange={() => toggleColumnVisibility(columnName)}
+              />
+              {columnName}
+            </label>
+          ))}
+        </div>
+      )}
+
         {/* Tableau */}
         <div style={{ 
           display: 'flex',
@@ -143,34 +194,35 @@ function CSV() {
               borderCollapse: 'collapse',
               minWidth: '600px',
             }}>
-              <Table.Header class="ui inverted dark blue table"  style={{ 
-                  
-                  color: 'black'
-                }}>
-                <Table.Row>
-                  {data[0] && Object.keys(data[0]).map((header) => (
+            <Table.Header className="ui inverted dark blue table" style={{ color: 'black' }}>
+              <Table.Row>
+                {data[0] && Object.keys(data[0]).map((header) => (
+                  columnVisibility[header] && (
                     <Table.HeaderCell key={header} style={{ border: '1px solid #ddd', padding: '8px' }}>
                       {header}
                     </Table.HeaderCell>
-                  ))}
-                </Table.Row>
-              </Table.Header>
-              <Table.Body>
-                {currentRows.map((row, rowIndex) => (
-                  <Table.Row key={rowIndex} style={{ backgroundColor: rowIndex % 2 === 0 ? '#f9f9f9' : 'white' }}>
-                    {Object.entries(row).map(([col, value], colIndex) => (
+                  )
+                ))}
+              </Table.Row>
+            </Table.Header>
+            <Table.Body>
+              {currentRows.map((row, rowIndex) => (
+                <Table.Row key={rowIndex} style={{ backgroundColor: rowIndex % 2 === 0 ? '#f9f9f9' : 'white' }}>
+                  {Object.entries(row).map(([col, value], colIndex) => (
+                    columnVisibility[col] && (
                       <Table.Cell key={colIndex} style={{ border: '1px solid #ddd', padding: '8px' }}>
                         <input value={value} onChange={(e) => handleEdit(rowIndex, col, e.target.value)} style={{ textAlign: 'center', border: 'none', backgroundColor: 'transparent' }} />
                       </Table.Cell>
-                    ))}
-                    <Table.Cell style={{ border: '1px solid #ddd', padding: '8px' }}>
-                      <Button onClick={() => handleDelete(rowIndex)} style={{ borderRadius: '50%', backgroundColor: 'red', color: 'white' }}>
-                        <UilTrashAlt />
-                      </Button>
-                    </Table.Cell>
-                  </Table.Row>
-                ))}
-              </Table.Body>
+                    )
+                  ))}
+                  <Table.Cell style={{ border: '1px solid #ddd', padding: '8px' }}>
+                    <Button onClick={() => handleDelete(rowIndex)} style={{ borderRadius: '50%', backgroundColor: 'red', color: 'white' }}>
+                      <UilTrashAlt />
+                    </Button>
+                  </Table.Cell>
+                </Table.Row>
+              ))}
+            </Table.Body>
             </Table>    
           </div>
         </div>
@@ -302,8 +354,8 @@ function CSV() {
         )}
       </>
       )}
-    {/* Modal */}
-      <ModalChoice open={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      {/* Modal */}
+      <ModalChoice open={isModalOpen} onClose={() => closeModal()} />
     </div>
   );
 }
