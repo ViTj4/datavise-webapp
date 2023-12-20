@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import Highcharts from 'highcharts'
 import HighchartsReact from 'highcharts-react-official'
 import { saveAs } from 'file-saver'
@@ -135,24 +135,24 @@ const Accueil = () => {
   }
 
   // Fonction pour générer et télécharger le CSV à partir des données du graphique
-  const downloadCSV = (seriesData, filename) => {
-    const csvContent =
-      `Year,${seriesData.map(series => series.name).join(',')}\n` +
-      seriesData[0].data
-        .map(
-          (_, index) =>
-            `${seriesData.map(series => series.data[index] || '').join(',')}`
-        )
-        .join('\n')
+  // const downloadCSV = (seriesData, filename) => {
+  //   const csvContent =
+  //     `Year,${seriesData.map(series => series.name).join(',')}\n` +
+  //     seriesData[0].data
+  //       .map(
+  //         (_, index) =>
+  //           `${seriesData.map(series => series.data[index] || '').join(',')}`
+  //       )
+  //       .join('\n')
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
-    saveAs(blob, filename)
-  }
+  //   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' })
+  //   saveAs(blob, filename)
+  // }
 
-  // Bouton pour télécharger le CSV de la première courbe
-  const downloadCSVCourbe = () => {
-    downloadCSV(courbeOptions.series, 'courbe.csv')
-  }
+  // // Bouton pour télécharger le CSV de la première courbe
+  // const downloadCSVCourbe = () => {
+  //   downloadCSV(courbeOptions.series, 'courbe.csv')
+  // }
 
   // Exemple de données pour le camembert
   const scatterData = [
