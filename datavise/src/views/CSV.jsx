@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Papa from 'papaparse';
 import { Button, Table, Input } from 'semantic-ui-react';
 import { UilArrowLeft, UilArrowRight, UilTrashAlt, UilExport } from '@iconscout/react-unicons';
-
+import ModalChoice from './components/ModalChoice';
 
 function CSV() {
   const [data, setData] = useState([]);
@@ -11,22 +11,27 @@ function CSV() {
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage] = useState(10);
   const [csvLoaded, setCsvLoaded] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  
   const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    if (e.target.value.length === 0) {
+    const value = e.target.value;
+    setSearchTerm(value);
+  
+    if (value.length === 0) {
       setFilteredData(data);
     } else {
+      const searchTermLower = value.toLowerCase();
       const filtered = data.filter(row => 
         Object.values(row).some(
-          value => value.toString().toLowerCase().includes(e.target.value.toLowerCase())
+          cellValue => cellValue.toString().toLowerCase().includes(searchTermLower)
         )
       );
+  
       setFilteredData(filtered);
+      setCurrentPage(1);
     }
-    setCurrentPage(1);
   };
+  
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -34,6 +39,7 @@ function CSV() {
       Papa.parse(file, {
         complete: (result) => {
           setData(result.data);
+          setIsModalOpen(true);
           setFilteredData(result.data);
           setCsvLoaded(true);
           e.target.value = '';
@@ -45,15 +51,28 @@ function CSV() {
     }
   };
 
-  const handleEdit = (rowIndex, colIndex, value) => {
+  const handleEdit = (rowIndex, col, value) => {
+    const realIndex = searchTerm ? data.findIndex(row => row === filteredData[rowIndex]) : rowIndex;
     const newData = [...data];
-    newData[rowIndex][colIndex] = value;
+    newData[realIndex][col] = value;
     setData(newData);
+    
+    if (searchTerm) {
+      const newFilteredData = [...filteredData];
+      newFilteredData[rowIndex][col] = value;
+      setFilteredData(newFilteredData);
+    }
   };
 
   const handleDelete = (rowIndex) => {
-    const newData = data.filter((_, index) => index !== rowIndex);
+    const realIndex = searchTerm ? data.findIndex(row => row === filteredData[rowIndex]) : rowIndex;
+    const newData = data.filter((_, index) => index !== realIndex);
     setData(newData);
+
+    if (searchTerm) {
+      const newFilteredData = filteredData.filter((_, index) => index !== rowIndex);
+      setFilteredData(newFilteredData);
+    }
   };
 
   const handleExport = () => {
@@ -75,7 +94,6 @@ function CSV() {
   const totalPages = searchTerm ? Math.ceil(filteredData.length / rowsPerPage) : Math.ceil(data.length / rowsPerPage);
 
   const paginate = (pageNumber) => setCurrentPage(pageNumber);
-
 
   return (
     <div>
@@ -106,19 +124,27 @@ function CSV() {
             />
           </div>
   
-          {/* Tableau */}
+        {/* Tableau */}
+        <div style={{ 
+          display: 'flex',
+          justifyContent: 'center',
+        }}>
           <div style={{ 
-            maxWidth: '80%',
-            margin: 'auto', 
-            overflowX: 'auto', 
+            display: 'inline-flex',
+            flexDirection: 'column',
+            width: '90%',
+            overflowX: 'auto',
             padding: '20px',
-            paddingRight: '20px',
             boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)', 
-            backgroundColor: '#fff', 
+            backgroundColor: '#fff',           
           }}>
-            <Table striped style={{ textAlign: 'center', borderCollapse: 'collapse' }}>
-              <Table.Header style={{ 
-                  backgroundColor : "#75ABFA",
+            <Table striped style={{
+              textAlign: 'center', 
+              borderCollapse: 'collapse',
+              minWidth: '600px',
+            }}>
+              <Table.Header class="ui inverted dark blue table"  style={{ 
+                  
                   color: 'black'
                 }}>
                 <Table.Row>
@@ -147,50 +173,92 @@ function CSV() {
               </Table.Body>
             </Table>    
           </div>
+        </div>
 
         {/* Pagination */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px' }}>
-          {/* Bouton précédent */}
-          <Button
-            circular
-            icon
-            disabled={currentPage === 1}
-            onClick={() => paginate(currentPage - 1)}
-            style={{ 
-              backgroundColor: '#f0f0f0', 
-              border: '1px solid #ccc', 
-              borderRadius: '10px',
-              cursor: 'pointer'
-              }}
-          >
-            <UilArrowLeft />
-          </Button>
+        {totalPages > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '20px', gap: '5px' }}>
+            {/* Bouton précédent */}
+            <Button
+              circular
+              icon
+              disabled={currentPage === 1}
+              onClick={() => paginate(currentPage - 1)}
+              style={{ 
+                backgroundColor: '#f0f0f0', 
+                border: '1px solid #ccc', 
+                borderRadius: '10px',
+                cursor: 'pointer'
+                }}
+            >
+              <UilArrowLeft />
+            </Button>
 
-          {/* Premières pages */}
-          {currentPage > 4 && (
-            <>
-              {Array.from({ length: 2 }, (_, index) => (
+            {/* Premières pages */}
+            {currentPage > 4 && (
+              <>
+                {Array.from({ length: 2 }, (_, index) => (
+                    <Button
+                      key={index}
+                      circular
+                      primary={currentPage === index + 1}
+                      onClick={() => paginate(index + 1)}
+                      style={{
+                        backgroundColor: currentPage === index + 1 ? '#007bff' : '#f0f0f0',
+                        color: currentPage === index + 1 ? 'white' : 'black',
+                        border: '1px solid #ccc',
+                        borderRadius: '10px',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {index + 1}
+                    </Button>
+                ))}
                   <Button
-                    key={index}
                     circular
-                    primary={currentPage === index + 1}
-                    onClick={() => paginate(index + 1)}
+                    primary={currentPage === totalPages }
                     style={{
-                      backgroundColor: currentPage === index + 1 ? '#007bff' : '#f0f0f0',
-                      color: currentPage === index + 1 ? 'white' : 'black',
+                      backgroundColor:  '#f0f0f0',
+                      color:  'black',
                       border: '1px solid #ccc',
-                      borderRadius: '10px',
-                      cursor: 'pointer'
+                      borderRadius: '10px'
                     }}
                   >
-                    {index + 1}
+                    ...
                   </Button>
-              ))}
+              </>
+            )}
+
+            {/* Pages autour de la page actuelle */}
+            {Array.from({ length: 5 }, (_, index) => {
+              const page = currentPage - 2 + index;
+              return (page > 0 && page <= totalPages) && (
+              <Button
+                key={page}
+                circular
+                primary={currentPage === page}
+                onClick={() => paginate(page)}
+                style={{
+                  backgroundColor: currentPage === page ? '#007bff' : '#f0f0f0',
+                  color: currentPage === page ? 'white' : 'black',
+                  border: '1px solid #ccc',
+                  borderRadius: '10px',
+                  cursor: 'pointer'
+                }}
+              >
+                {page}
+              </Button>
+              );
+            })}
+
+            {/* Ellipse et dernière page si nécessaire */}
+            {currentPage < totalPages - 3 && (
+              <>
                 <Button
                   circular
                   primary={currentPage === totalPages }
                   style={{
-                    backgroundColor:  '#f0f0f0',
+                    backgroundColor: '#f0f0f0',
                     color:  'black',
                     border: '1px solid #ccc',
                     borderRadius: '10px'
@@ -198,81 +266,44 @@ function CSV() {
                 >
                   ...
                 </Button>
-            </>
-          )}
 
-          {/* Pages autour de la page actuelle */}
-          {Array.from({ length: 5 }, (_, index) => {
-            const page = currentPage - 2 + index;
-            return (page > 0 && page <= totalPages) && (
+                <Button
+                  circular
+                  primary={currentPage === totalPages}
+                  onClick={() => paginate(totalPages)}
+                  style={{ 
+                    backgroundColor: currentPage === totalPages ? '#007bff' : '#f0f0f0',
+                    color: currentPage === totalPages ? 'white' : 'black',
+                    border: '1px solid #ccc', 
+                    borderRadius: '10px',
+                    cursor: 'pointer'
+                  }}
+                >{totalPages}
+                </Button>
+              </>
+            )}
+
+            {/* Bouton suivant */}
             <Button
-              key={page}
               circular
-              primary={currentPage === page}
-              onClick={() => paginate(page)}
-              style={{
-                backgroundColor: currentPage === page ? '#007bff' : '#f0f0f0',
-                color: currentPage === page ? 'white' : 'black',
-                border: '1px solid #ccc',
+              icon
+              disabled={currentPage === totalPages}
+              onClick={() => paginate(currentPage + 1)}
+              style={{ 
+                backgroundColor: '#f0f0f0', 
+                border: '1px solid #ccc', 
                 borderRadius: '10px',
                 cursor: 'pointer'
               }}
             >
-              {page}
+              <UilArrowRight />
             </Button>
-            );
-          })}
-
-          {/* Ellipse et dernière page si nécessaire */}
-          {currentPage < totalPages - 3 && (
-            <>
-              <Button
-                circular
-                primary={currentPage === totalPages }
-                style={{
-                  backgroundColor: '#f0f0f0',
-                  color:  'black',
-                  border: '1px solid #ccc',
-                  borderRadius: '10px'
-                }}
-              >
-                ...
-              </Button>
-
-              <Button
-                circular
-                primary={currentPage === totalPages}
-                onClick={() => paginate(totalPages)}
-                style={{ 
-                  backgroundColor: currentPage === totalPages ? '#007bff' : '#f0f0f0',
-                  color: currentPage === totalPages ? 'white' : 'black',
-                  border: '1px solid #ccc', 
-                  borderRadius: '10px',
-                  cursor: 'pointer'
-                }}
-              >{totalPages}
-              </Button>
-            </>
-          )}
-
-          {/* Bouton suivant */}
-          <Button
-            circular
-            icon
-            disabled={currentPage === totalPages}
-            onClick={() => paginate(currentPage + 1)}
-            style={{ 
-              backgroundColor: '#f0f0f0', 
-              border: '1px solid #ccc', 
-              borderRadius: '10px',
-              cursor: 'pointer'
-            }}
-          >
-            <UilArrowRight />
-          </Button>
-        </div>
+          </div>
+        )}
       </>
       )}
+    {/* Modal */}
+      <ModalChoice open={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
