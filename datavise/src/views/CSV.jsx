@@ -163,14 +163,14 @@ function CSV() {
         <>
           {/* Dropdowns for Highcharts Column Selection */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-            <label>Select Column: </label>
+            <label>Select Y Axis: </label>
             <select onChange={e => setSelectedColumn(e.target.value)} value={selectedColumn}>
               {Object.keys(data[0]).map(columnName => (
                 <option key={columnName} value={columnName}>{columnName}</option>
               ))}
             </select>
   
-            <label>Select Column: </label>
+            <label>Select X Axis: </label>
             <select onChange={e => setSelectedColumn2(e.target.value)} value={selectedColumn2}>
               {Object.keys(data[0]).map(columnName => (
                 <option key={columnName} value={columnName}>{columnName}</option>
