@@ -3,6 +3,8 @@ import Papa from 'papaparse';
 import { Button, Table, Input, Dropdown } from 'semantic-ui-react';
 import { UilArrowLeft, UilArrowRight, UilTrashAlt, UilExport } from '@iconscout/react-unicons';
 import ModalChoice from './components/ModalChoice';
+import Highcharts from 'highcharts';
+import HighchartsReact from 'highcharts-react-official';
 // import { useNavigate } from 'react-router-dom';
 
 function CSV() {
@@ -14,6 +16,8 @@ function CSV() {
   const [csvLoaded, setCsvLoaded] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [columnVisibility, setColumnVisibility] = useState({});
+  const [selectedColumn, setSelectedColumn] = useState(data.length > 0 ? Object.keys(data[0])[0] : '');
+  const [selectedColumn2, setSelectedColumn2] = useState(data.length > 0 ? Object.keys(data[0])[0] : '');
 
   useEffect(() => {
     if (data.length > 0) {
@@ -22,6 +26,8 @@ function CSV() {
         return acc;
       }, {});
       setColumnVisibility(visibility);
+      setSelectedColumn(Object.keys(data[0])[0]);
+      setSelectedColumn2(Object.keys(data[0])[0]);
     }
   }, [data]);
 
@@ -71,14 +77,20 @@ function CSV() {
           setData(result.data);
           setIsModalOpen(true);
           setFilteredData(result.data);
-          
+          setSelectedColumn(Object.keys(result.data[0])[0]);
+          setSelectedColumn2(Object.keys(result.data[0])[0]);
+
           e.target.value = '';
           setSearchTerm(e.target.value);
         },
         header: true,
-        skipEmptyLines: true,
+        skipEmptyLines: true
       });
     }
+  };
+
+  const prepareChartData = (xColumn, yColumn) => {
+    return data.map(item => [Number(item[xColumn]), Number(item[yColumn])]);
   };
 
   const handleEdit = (rowIndex, col, value) => {
@@ -143,14 +155,59 @@ function CSV() {
 
   return (
     <div>
-      {/* Bouton d'importation */}
+      {/* File Import Button */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
         <input type="file" id="file" accept=".csv" onChange={handleFileChange} />
       </div>
   
       {csvLoaded && (
         <>
-          {/* Boutons d'exportation et pour continuer */}
+          {/* Dropdowns for Highcharts Column Selection */}
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
+            <label>Select Column: </label>
+            <select onChange={e => setSelectedColumn(e.target.value)} value={selectedColumn}>
+              {Object.keys(data[0]).map(columnName => (
+                <option key={columnName} value={columnName}>{columnName}</option>
+              ))}
+            </select>
+  
+            <label>Select Column: </label>
+            <select onChange={e => setSelectedColumn2(e.target.value)} value={selectedColumn2}>
+              {Object.keys(data[0]).map(columnName => (
+                <option key={columnName} value={columnName}>{columnName}</option>
+              ))}
+            </select>
+          </div>
+  
+          {/* Highcharts Graph */}
+          <div>
+            <HighchartsReact
+              highcharts={Highcharts}
+              options={{
+                title: {
+                  text: `Graph for ${selectedColumn} and ${selectedColumn2}`
+                },
+                xAxis: {
+                  title: {
+                    text: selectedColumn2
+                  }
+                },
+                yAxis: {
+                  title: {
+                    text: selectedColumn
+                  }
+                },
+                series: [
+                  {
+                    type: 'line',
+                    data: prepareChartData(selectedColumn2, selectedColumn)
+                  }
+                ]
+              }}
+            />
+          </div>
+  
+          {/* Export and Continue Buttons */}
           <div style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '20px' }}>
             <Button onClick={handleExport} style={{ borderRadius: '50%', backgroundColor: 'emerald' }}>
               <UilExport />
@@ -160,30 +217,23 @@ function CSV() {
             </Button>
           </div>
   
-          {/* Barre de recherche */}
+          {/* Search Bar */}
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-            <Input
-              icon='search'
-              placeholder='Rechercher...'
-              onChange={handleSearchChange}
-              value={searchTerm}
-            />
+            <Input icon='search' placeholder='Rechercher...' onChange={handleSearchChange} value={searchTerm} />
           </div>
   
-          {/* Conteneur pour centrer le Dropdown */}
+          {/* Column Visibility Dropdown */}
           {data.length > 0 && (
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-              <div style={{ width: '80%' }}> {/* Conteneur avec largeur spécifiée */}
-                <Dropdown
-                  placeholder='Sélectionnez les colonnes'
-                  fluid
-                  multiple
-                  selection
-                  options={columnOptions}
-                  onChange={handleColumnVisibilityChange}
-                  value={Object.keys(columnVisibility).filter(key => columnVisibility[key])}
-                />
-              </div>
+              <Dropdown
+                placeholder='Sélectionnez les colonnes'
+                fluid
+                multiple
+                selection
+                options={columnOptions}
+                onChange={handleColumnVisibilityChange}
+                value={Object.keys(columnVisibility).filter(key => columnVisibility[key])}
+              />
             </div>
           )}
 
