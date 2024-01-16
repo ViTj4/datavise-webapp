@@ -26,8 +26,6 @@ function CSV() {
         return acc;
       }, {});
       setColumnVisibility(visibility);
-      setSelectedColumn(Object.keys(data[0])[0]);
-      setSelectedColumn2(Object.keys(data[0])[0]);
     }
   }, [data]);
 
@@ -110,12 +108,13 @@ function CSV() {
     const realIndex = searchTerm ? data.findIndex(row => row === filteredData[rowIndex]) : rowIndex;
     const newData = data.filter((_, index) => index !== realIndex);
     setData(newData);
-
+  
     if (searchTerm) {
       const newFilteredData = filteredData.filter((_, index) => index !== rowIndex);
       setFilteredData(newFilteredData);
     }
   };
+  
 
   const handleExport = () => {
     const filteredDataForExport = data.map(row => {
